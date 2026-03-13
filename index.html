@@ -1,307 +1,229 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>AI文字艺术生成器</title>
-
-<style>
-
-body{
-margin:0;
-background:#000;
-color:white;
-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI";
-display:flex;
-flex-direction:column;
-align-items:center;
-overflow:hidden;
-}
-
-h1{
-margin:20px;
-}
-
-.controls{
-display:flex;
-flex-wrap:wrap;
-gap:10px;
-justify-content:center;
-margin-bottom:10px;
-}
-
-input,select,button{
-padding:8px 10px;
-border-radius:6px;
-border:none;
-}
-
-button{
-background:#4a6cf7;
-color:white;
-cursor:pointer;
-}
-
-canvas{
-background:transparent;
-}
-
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI文字艺术生成器</title>
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI";
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+        }
+        h1 {
+            margin: 20px;
+            text-shadow: 0 0 10px #4a6cf7;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        input, select, button {
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: none;
+        }
+        button {
+            background: #4a6cf7;
+            color: white;
+            cursor: pointer;
+        }
+        canvas {
+            background: transparent;
+            box-shadow: 0 0 20px rgba(74, 108, 247, 0.2);
+        }
+    </style>
 </head>
-
 <body>
-
-<h1>🌀 AI文字艺术生成器</h1>
-
-<div class="controls">
-
-<input id="text" value="天地玄黄宇宙洪荒">
-
-<label>数量</label>
-<input id="count" type="number" value="120">
-
-<label>半径</label>
-<input id="radius" type="range" min="50" max="300" value="180">
-
-<label>字体</label>
-<input id="size" type="range" min="10" max="80" value="26">
-
-<label>速度</label>
-<input id="speed" type="range" min="1" max="30" value="10">
-
-<select id="mode">
-<option value="circle">圆环</option>
-<option value="flower">花形</option>
-<option value="spiral">螺旋</option>
-<option value="kaleido">万花筒</option>
-<option value="galaxy">星系</option>
-<option value="mandala">曼陀罗</option>
-</select>
-
-<select id="theme">
-<option value="rainbow">彩虹</option>
-<option value="gold">金色</option>
-<option value="neon">霓虹</option>
-<option value="ice">冰蓝</option>
-</select>
-
-<button onclick="preview()">预览</button>
-<button onclick="start()">开始</button>
-<button onclick="stop()">停止</button>
-<button onclick="exportPNG()">导出PNG</button>
-
-</div>
-
-<canvas id="canvas" width="700" height="700"></canvas>
-
-<script>
-
-const canvas=document.getElementById("canvas")
-const ctx=canvas.getContext("2d")
-
-let angle=0
-let running=false
-
-/* 星空粒子 */
-
-let stars=[]
-
-for(let i=0;i<120;i++){
-
-stars.push({
-x:Math.random()*700,
-y:Math.random()*700,
-r:Math.random()*2
-})
-
-}
-
-/* 颜色 */
-
-function getColor(i,count,theme){
-
-let hue=i/count*360
-
-if(theme==="rainbow") return "hsl("+hue+",80%,60%)"
-if(theme==="gold") return "hsl(45,90%,"+(50+i%20)+"%)"
-if(theme==="neon") return "hsl("+hue+",100%,70%)"
-if(theme==="ice") return "hsl(200,80%,"+(60+i%20)+"%)"
-
-}
-
-/* 参数 */
-
-function settings(){
-
-return{
-
-text:document.getElementById("text").value,
-count:+document.getElementById("count").value,
-radius:+document.getElementById("radius").value,
-size:+document.getElementById("size").value,
-speed:+document.getElementById("speed").value,
-mode:document.getElementById("mode").value,
-theme:document.getElementById("theme").value
-
-}
-
-}
-
-/* 背景 */
-
-function drawStars(){
-
-ctx.fillStyle="white"
-
-stars.forEach(s=>{
-
-ctx.beginPath()
-ctx.arc(s.x,s.y,s.r,0,Math.PI*2)
-ctx.fill()
-
-})
-
-}
-
-/* 绘制 */
-
-function draw(a){
-
-let s=settings()
-
-ctx.clearRect(0,0,700,700)
-
-drawStars()
-
-let cx=350
-let cy=350
-
-ctx.textAlign="center"
-ctx.textBaseline="middle"
-ctx.font=s.size+"px serif"
-
-for(let i=0;i<s.count;i++){
-
-let ang=i/s.count*Math.PI*2+a
-
-let x,y
-
-if(s.mode==="circle"){
-
-x=cx+Math.cos(ang)*s.radius
-y=cy+Math.sin(ang)*s.radius
-
-}
-
-if(s.mode==="flower"){
-
-let r=s.radius*Math.sin(6*ang)
-x=cx+Math.cos(ang)*r
-y=cy+Math.sin(ang)*r
-
-}
-
-if(s.mode==="spiral"){
-
-let r=s.radius*(i/s.count)
-x=cx+Math.cos(ang)*r
-y=cy+Math.sin(ang)*r
-
-}
-
-if(s.mode==="kaleido"){
-
-let r=s.radius*Math.sin(8*ang)
-x=cx+Math.cos(ang)*r
-y=cy+Math.sin(ang)*r
-
-}
-
-if(s.mode==="galaxy"){
-
-let r=s.radius*(i/s.count)
-x=cx+Math.cos(ang+i*0.2)*r
-y=cy+Math.sin(ang+i*0.2)*r
-
-}
-
-if(s.mode==="mandala"){
-
-let r=s.radius*Math.sin(10*ang)
-x=cx+Math.cos(ang)*r
-y=cy+Math.sin(ang)*r
-
-}
-
-ctx.fillStyle=getColor(i,s.count,s.theme)
-
-ctx.save()
-
-ctx.translate(x,y)
-ctx.rotate(ang)
-
-let char=s.text[i%s.text.length]
-
-ctx.fillText(char,0,0)
-
-ctx.restore()
-
-}
-
-}
-
-/* 预览 */
-
-function preview(){
-
-draw(0)
-
-}
-
-/* 动画 */
-
-function animate(){
-
-if(!running) return
-
-let s=settings()
-
-draw(angle)
-
-angle+=s.speed*0.002
-
-requestAnimationFrame(animate)
-
-}
-
-function start(){
-
-running=true
-animate()
-
-}
-
-function stop(){
-
-running=false
-
-}
-
-/* 导出 */
-
-function exportPNG(){
-
-let link=document.createElement("a")
-link.download="text-art.png"
-link.href=canvas.toDataURL()
-link.click()
-
-}
-
-preview()
-
-</script>
-
+    <h1>🌀 AI文字艺术生成器</h1>
+    <div class="controls">
+        <input id="text" value="天地玄黄宇宙洪荒">
+        
+        <label>数量</label>
+        <input id="count" type="number" value="120">
+        
+        <label>半径</label>
+        <input id="radius" type="range" min="50" max="300" value="180">
+        
+        <label>字体</label>
+        <input id="size" type="range" min="10" max="80" value="26">
+        
+        <label>速度</label>
+        <input id="speed" type="range" min="1" max="30" value="10">
+        
+        <select id="mode">
+            <option value="circle">圆环</option>
+            <option value="flower">花形</option>
+            <option value="spiral">螺旋</option>
+            <option value="kaleido">万花筒</option>
+            <option value="galaxy">星系</option>
+            <option value="mandala">曼陀罗</option>
+        </select>
+        
+        <select id="theme">
+            <option value="rainbow">彩虹</option>
+            <option value="gold">金色</option>
+            <option value="neon">霓虹</option>
+            <option value="ice">冰蓝</option>
+        </select>
+        
+        <button onclick="preview()">预览</button>
+        <button onclick="start()">开始</button>
+        <button onclick="stop()">停止</button>
+        <button onclick="exportPNG()">导出PNG</button>
+    </div>
+    <canvas id="canvas" width="700" height="700"></canvas>
+
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        let angle = 0;
+        let running = false;
+
+        // 星空粒子
+        let stars = [];
+        for (let i = 0; i < 120; i++) {
+            stars.push({
+                x: Math.random() * 700,
+                y: Math.random() * 700,
+                r: Math.random() * 2
+            });
+        }
+
+        // 颜色主题
+        function getColor(i, count, theme) {
+            let hue = (i / count) * 360;
+            if (theme === "rainbow") return "hsl(" + hue + ",80%,60%)";
+            if (theme === "gold") return "hsl(45,90%," + (50 + i % 20) + "%)";
+            if (theme === "neon") return "hsl(" + hue + ",100%,70%)";
+            if (theme === "ice") return "hsl(200,80%," + (60 + i % 20) + "%)";
+        }
+
+        // 获取参数
+        function settings() {
+            return {
+                text: document.getElementById("text").value,
+                count: +document.getElementById("count").value,
+                radius: +document.getElementById("radius").value,
+                size: +document.getElementById("size").value,
+                speed: +document.getElementById("speed").value,
+                mode: document.getElementById("mode").value,
+                theme: document.getElementById("theme").value
+            };
+        }
+
+        // 绘制星空背景
+        function drawStars() {
+            ctx.fillStyle = "white";
+            stars.forEach(s => {
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // 绘制文字艺术
+        function draw(a) {
+            let s = settings();
+            ctx.clearRect(0, 0, 700, 700);
+            drawStars();
+
+            let cx = 350;
+            let cy = 350;
+
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.font = s.size + "px serif";
+
+            for (let i = 0; i < s.count; i++) {
+                let ang = (i / s.count) * Math.PI * 2 + a;
+                let x, y;
+
+                // 不同模式的计算
+                if (s.mode === "circle") {
+                    x = cx + Math.cos(ang) * s.radius;
+                    y = cy + Math.sin(ang) * s.radius;
+                }
+                if (s.mode === "flower") {
+                    let r = s.radius * Math.sin(6 * ang);
+                    x = cx + Math.cos(ang) * r;
+                    y = cy + Math.sin(ang) * r;
+                }
+                if (s.mode === "spiral") {
+                    let r = s.radius * (i / s.count);
+                    x = cx + Math.cos(ang) * r;
+                    y = cy + Math.sin(ang) * r;
+                }
+                if (s.mode === "kaleido") {
+                    let r = s.radius * Math.sin(8 * ang);
+                    x = cx + Math.cos(ang) * r;
+                    y = cy + Math.sin(ang) * r;
+                }
+                if (s.mode === "galaxy") {
+                    let r = s.radius * (i / s.count);
+                    x = cx + Math.cos(ang + i * 0.2) * r;
+                    y = cy + Math.sin(ang + i * 0.2) * r;
+                }
+                if (s.mode === "mandala") {
+                    let r = s.radius * Math.sin(10 * ang);
+                    x = cx + Math.cos(ang) * r;
+                    y = cy + Math.sin(ang) * r;
+                }
+
+                ctx.fillStyle = getColor(i, s.count, s.theme);
+
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(ang);
+
+                let char = s.text[i % s.text.length];
+                ctx.fillText(char, 0, 0);
+
+                ctx.restore();
+            }
+        }
+
+        // 预览
+        function preview() {
+            draw(0);
+        }
+
+        // 动画循环
+        function animate() {
+            if (!running) return;
+            let s = settings();
+            draw(angle);
+            angle += s.speed * 0.002;
+            requestAnimationFrame(animate);
+        }
+
+        function start() {
+            running = true;
+            animate();
+        }
+
+        function stop() {
+            running = false;
+        }
+
+        // 导出为PNG
+        function exportPNG() {
+            let link = document.createElement("a");
+            link.download = "text-art.png";
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        preview();
+    </script>
 </body>
 </html>
